@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RSVP reader - Intopia</title>
+<link rel="shortcut icon" href="https://intopia.digital/wp-content/uploads/2017/06/cropped-Intopia_FINAL_icon-32x32.png" sizes="32x32">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Sans+3:wght@600&family=Atkinson+Hyperlegible&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #16233d;
+    --ink-soft: #4a5875;
+    --paper: #efefef;
+    --panel: #ffffff;
+    --border-strong: #dddddd;
+    --focus: #1b4fbf;
+    --brand: #c03c0c;
+    --brand-text: #c03c0c;
+    --logo-bg: transparent;
+    --font-brand: 'Source Sans Pro', 'Source Sans 3', 'Helvetica Neue', Helvetica, Arial, Frutiger, 'Frutiger Linotype', Univers, Calibri, 'Gill Sans', 'Gill Sans MT', 'Myriad Pro', Myriad, 'DejaVu Sans Condensed', 'Liberation Sans', 'Nimbus Sans L', Tahoma, Geneva, sans-serif;
+    --font-display: 'Space Grotesk', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+    --font-stage: 'Atkinson Hyperlegible', 'IBM Plex Sans', system-ui, sans-serif;
+    --radius: 4px;
+    --base: clamp(2.25rem, 8vw, 3.75rem);
+    color-scheme: light;
+  }
+  /* Dark mode: derived, not part of the brand handoff */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #e9edf3;
+      --ink-soft: #aeb8c8;
+      --paper: #14181f;
+      --panel: #1c2230;
+      --border-strong: #3a4356;
+      --focus: #8fb0ff;
+      --brand-text: #ff8a5c;
+      --logo-bg: #ffffff;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e9edf3;
+    --ink-soft: #aeb8c8;
+    --paper: #14181f;
+    --panel: #1c2230;
+    --border-strong: #3a4356;
+    --focus: #8fb0ff;
+    --brand-text: #ff8a5c;
+    --logo-bg: #ffffff;
+    color-scheme: dark;
+  }
+
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: inherit; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .wrap {
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: 1.25rem 1rem 3rem;
+  }
+
+  /* Header */
+  .brand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 0.5rem;
+  }
+  .intopia-logo {
+    width: 180px;
+    height: auto;
+    background: var(--logo-bg);
+    border-radius: var(--radius);
+  }
+  .brand-text h1 {
+    font-family: var(--font-brand);
+    color: var(--brand-text);
+    font-size: 2.4rem;
+    font-weight: 600;
+    line-height: 1.15;
+    margin: 0;
+  }
+  .intro {
+    margin: 0 0 0.25rem;
+    max-width: 40rem;
+  }
+  .privacy {
+    margin: 0 0 1rem;
+    color: var(--ink-soft);
+    font-size: 0.9375rem;
+  }
+
+  /* The stage */
+  .reader {
+    position: relative;
+    container-type: inline-size;
+    background: var(--panel);
+    border: 2px solid var(--border-strong);
+    border-radius: var(--radius);
+    padding: 1.5rem 0.75rem;
+    min-height: calc(var(--base) * 1.3 + 3rem);
+    display: grid;
+    align-content: center;
+    overflow: hidden;
+  }
+  .reader::before,
+  .reader::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    width: 2px;
+    height: 0.9rem;
+    background: var(--ink-soft);
+    transform: translateX(-50%);
+  }
+  .reader::before { top: 0; }
+  .reader::after { bottom: 0; }
+
+  .word {
+    --side: 6;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    white-space: pre;
+    line-height: 1.3;
+    font-family: var(--font-stage);
+    color: var(--ink);
+    font-size: min(var(--base), calc(47cqi / var(--side) / 0.7));
+  }
+  .before { text-align: right; }
+  .after { text-align: left; }
+  .pivot { color: var(--brand-text); }
+  .empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    white-space: normal;
+  }
+
+  /* Progress and status */
+  .progress-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 1rem;
+    margin: 0.75rem 0 1rem;
+  }
+  progress {
+    flex: 1 1 12rem;
+    height: 0.5rem;
+    accent-color: var(--brand);
+  }
+  .progress-text,
+  .status {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 0.9375rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .status {
+    flex-basis: 100%;
+    min-height: 1.5em;
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+  button {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 1.1rem;
+    cursor: pointer;
+    border-radius: var(--radius);
+    padding: 12px 22px;
+    background: transparent;
+    color: var(--brand-text);
+    border: 2px solid var(--brand-text);
+  }
+  button:hover { background: var(--panel); }
+  .btn-primary {
+    background: var(--brand);
+    color: #ffffff;
+    border-color: var(--brand);
+    min-width: 7rem;
+  }
+  .btn-primary:hover { background: #a3330a; border-color: #a3330a; }
+
+  :focus { outline: 3px solid var(--focus); outline-offset: 2px; }
+  :focus:not(:focus-visible) { outline: none; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+  .field-label {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.375rem;
+  }
+
+  .speed {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .speed .field-label { margin: 0; }
+  .speed input {
+    flex: 1 1 12rem;
+    accent-color: var(--brand);
+    min-height: 2.75rem;
+  }
+  .speed output {
+    font-variant-numeric: tabular-nums;
+    min-width: 5.5rem;
+  }
+
+  .option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: -0.5rem 0 1.5rem;
+    min-height: 2.75rem;
+    cursor: pointer;
+  }
+  .option input {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;
+    accent-color: var(--brand);
+    cursor: pointer;
+  }
+
+  .hint {
+    margin: 0 0 0.5rem;
+    color: var(--ink-soft);
+    font-size: 0.9375rem;
+  }
+  textarea {
+    width: 100%;
+    min-height: 12rem;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--ink);
+    background: var(--panel);
+    border: 2px solid var(--border-strong);
+    border-radius: var(--radius);
+    padding: 0.75rem;
+    resize: vertical;
+  }
+
+  details {
+    margin-top: 1.5rem;
+    background: var(--panel);
+    border: 2px solid var(--border-strong);
+    border-radius: var(--radius);
+    padding: 1rem;
+  }
+  summary {
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+  details h2 {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 1rem 0 0.25rem;
+  }
+  details ul { margin: 0.25rem 0; padding-left: 1.25rem; }
+  details p { margin: 0.25rem 0 0.75rem; }
+  kbd {
+    font-family: inherit;
+    border: 1px solid var(--ink-soft);
+    border-radius: 0.25rem;
+    padding: 0 0.3rem;
+    font-size: 0.9em;
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="brand">
+    <img src="https://intopia.digital/wp-content/themes/intopia-refresh/assets/images/intopia.png" alt="Intopia logo" class="intopia-logo">
+    <div class="brand-text">
+      <h1>RSVP reader</h1>
+    </div>
+  </div>
+  <p class="intro">Some people find reading one word at a time easier, others find it harder. It depends on the person and the text. Try it and see if it works for you.</p>
+  <p class="privacy">Text you paste here is not sent anywhere. This reader runs entirely in your browser.</p>
+
+  <section class="reader" aria-label="Current word">
+    <div class="word" id="word"><span class="before"></span><span class="pivot"></span><span class="after"></span></div>
+  </section>
+
+  <div class="progress-row">
+    <progress id="progress" max="1" value="0" aria-label="Reading progress"></progress>
+    <p class="progress-text" id="progressText"></p>
+    <p class="status" id="status" role="status"></p>
+  </div>
+
+  <div class="controls" role="group" aria-label="Playback">
+    <button type="button" id="restart" aria-keyshortcuts="Home">Restart</button>
+    <button type="button" id="prevSentence" aria-keyshortcuts="Shift+ArrowLeft">Back sentence</button>
+    <button type="button" id="prevWord" aria-keyshortcuts="ArrowLeft">Back word</button>
+    <button type="button" id="play" class="btn-primary" aria-keyshortcuts="Space">Play</button>
+    <button type="button" id="nextWord" aria-keyshortcuts="ArrowRight">Forward word</button>
+  </div>
+
+  <div class="speed">
+    <label class="field-label" for="wpm">Speed</label>
+    <input type="range" id="wpm" min="200" max="700" step="25" value="300">
+    <output id="wpmOut" for="wpm">300 WPM</output>
+  </div>
+
+  <label class="option" for="sentenceMode">
+    <input type="checkbox" id="sentenceMode">
+    Pause after each sentence
+  </label>
+
+  <label class="field-label" for="text">Text to read</label>
+  <p class="hint" id="textHint">Paste or type text here. Changing it takes you back to the start.</p>
+  <textarea id="text" aria-describedby="textHint">Rapid serial visual presentation shows one word at a time in the same spot on the screen. Instead of your eyes moving along a line, the words come to you.
+
+Each word has one highlighted letter. It sits slightly left of the middle of the word, and the whole word shifts so that letter always lands in the same place. That letter is not there to be read. It is a fixation anchor, something for your eyes to rest on.
+
+Reading this way can feel very fast. Whether you understand and remember more is a different question, so try a few speeds and see how it feels.</textarea>
+
+  <details>
+    <summary>Keyboard shortcuts and notes</summary>
+    <h2>Keyboard shortcuts</h2>
+    <p>These work anywhere on the page except in the text box and the speed slider.</p>
+    <ul>
+      <li><kbd>Space</kbd> play or pause</li>
+      <li><kbd>←</kbd> and <kbd>→</kbd> back or forward one word</li>
+      <li><kbd>Shift</kbd> + <kbd>←</kbd> back to the start of the sentence (press again to go back another sentence)</li>
+      <li><kbd>Home</kbd> restart from the beginning</li>
+    </ul>
+    <h2>How timing works</h2>
+    <p>The speed sets the base time for each word. Words ending a clause (comma, semicolon, colon, dash) get extra time, sentence endings get double time, and paragraph breaks pause a little longer. Long words also get a bit more time. Because of these pauses, your actual reading speed will be a little below the number shown.</p>
+    <h2>Pause after each sentence</h2>
+    <p>When this is ticked, the reader stops on the last word of each sentence and waits. Press play or <kbd>Space</kbd> to read the next sentence. Paragraph breaks also count as a stopping point. Common abbreviations such as Mr., Mrs., Dr. and e.g., plus single initials such as J., are not treated as sentence endings.</p>
+    <h2>Before you use it</h2>
+    <p>At the top speed, the word changes around 12 times a second. If fast changing text is uncomfortable, start slow and pause at any time.</p>
+  </details>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var els = {
+    word: document.getElementById("word"),
+    status: document.getElementById("status"),
+    progress: document.getElementById("progress"),
+    progressText: document.getElementById("progressText"),
+    restart: document.getElementById("restart"),
+    prevSentence: document.getElementById("prevSentence"),
+    prevWord: document.getElementById("prevWord"),
+    play: document.getElementById("play"),
+    nextWord: document.getElementById("nextWord"),
+    wpm: document.getElementById("wpm"),
+    wpmOut: document.getElementById("wpmOut"),
+    sentenceMode: document.getElementById("sentenceMode"),
+    text: document.getElementById("text")
+  };
+
+  var LEAD = /^[^\p{L}\p{N}]+/u;
+  var TRAIL = /[^\p{L}\p{N}]+$/u;
+  var SENTENCE_END = /[.!?\u2026]["'\u201D\u2019)\]]*$/;
+  var CLAUSE_END = /[,;:\u2013\u2014-]["'\u201D\u2019)\]]*$/;
+
+  // Words ending in a full stop that usually don't end a sentence
+  var ABBREVIATIONS = new Set([
+    "mr", "mrs", "ms", "mx", "dr", "prof", "rev", "st", "jr", "sr",
+    "vs", "e.g", "i.e", "cf", "approx"
+  ]);
+
+  var words = [];
+  var index = 0;
+  var timer = null;
+  var playing = false;
+  var finished = false;
+  var atSentenceEnd = false;
+
+  function isAbbreviation(w) {
+    if (!/\.$/.test(w)) return false;
+    var core = w.replace(LEAD, "").replace(/\.$/, "");
+    // Single initial, such as J. ("I." is left alone as it often ends a sentence)
+    if (/^\p{Lu}$/u.test(core) && core !== "I") return true;
+    return ABBREVIATIONS.has(core.toLowerCase());
+  }
+
+  // Split text into words, keeping track of sentence and paragraph endings
+  function parse(text) {
+    var out = [];
+    text.split(/\n\s*\n/).forEach(function (para) {
+      var list = para.trim().split(/\s+/).filter(Boolean);
+      list.forEach(function (w, k) {
+        var paraEnd = k === list.length - 1;
+        out.push({
+          text: w,
+          parts: splitWord(w),
+          sentenceEnd: SENTENCE_END.test(w) && !isAbbreviation(w),
+          clauseEnd: CLAUSE_END.test(w),
+          paraEnd: paraEnd
+        });
+      });
+    });
+    return out;
+  }
+
+  // Work out the ORP letter, ignoring leading and trailing punctuation
+  function splitWord(w) {
+    var chars = Array.from(w);
+    var leadMatch = w.match(LEAD);
+    var trailMatch = w.match(TRAIL);
+    var leadLen = leadMatch ? Array.from(leadMatch[0]).length : 0;
+    var trailLen = trailMatch ? Array.from(trailMatch[0]).length : 0;
+    var coreLen = chars.length - leadLen - trailLen;
+    var orp;
+
+    if (coreLen <= 0) {
+      // All punctuation, such as a lone dash
+      coreLen = chars.length;
+      orp = Math.ceil((chars.length - 1) / 4);
+    } else {
+      orp = leadLen + Math.ceil((coreLen - 1) / 4);
+    }
+
+    return {
+      before: chars.slice(0, orp).join(""),
+      pivot: chars[orp] || "",
+      after: chars.slice(orp + 1).join(""),
+      beforeLen: orp,
+      afterLen: chars.length - orp - 1,
+      coreLen: coreLen
+    };
+  }
+
+  function baseDelay() {
+    return 60000 / Number(els.wpm.value);
+  }
+
+  function delayFor(w) {
+    var m = 1;
+    if (w.parts.coreLen >= 9) m += 0.3;
+    if (w.parts.coreLen >= 13) m += 0.3;
+    if (w.sentenceEnd) m += 1;
+    else if (w.clauseEnd) m += 0.5;
+    if (w.paraEnd) m = Math.max(m, 2.5);
+    return baseDelay() * m;
+  }
+
+  function render() {
+    var wordEl = els.word;
+    if (!words.length) {
+      wordEl.innerHTML = '<span class="empty">Paste some text below to get started.</span>';
+      wordEl.style.removeProperty("--side");
+      updateProgress();
+      return;
+    }
+    if (!wordEl.querySelector(".pivot")) {
+      wordEl.innerHTML = '<span class="before"></span><span class="pivot"></span><span class="after"></span>';
+    }
+    var p = words[index].parts;
+    wordEl.children[0].textContent = p.before;
+    wordEl.children[1].textContent = p.pivot;
+    wordEl.children[2].textContent = p.after;
+    // Shrink very long words so they fit either side of the anchor
+    wordEl.style.setProperty("--side", Math.max(p.beforeLen, p.afterLen, 5) + 0.5);
+    updateProgress();
+  }
+
+  function formatTime(ms) {
+    var s = Math.round(ms / 1000);
+    var m = Math.floor(s / 60);
+    var r = s % 60;
+    return m + ":" + (r < 10 ? "0" : "") + r;
+  }
+
+  function updateProgress() {
+    var n = words.length;
+    if (!n) {
+      els.progress.value = 0;
+      els.progressText.textContent = "No text yet";
+      return;
+    }
+    els.progress.max = n;
+    els.progress.value = index + 1;
+    var remaining = 0;
+    for (var k = index; k < n; k++) remaining += delayFor(words[k]);
+    els.progressText.textContent =
+      "Word " + (index + 1) + " of " + n + ", " + formatTime(remaining) + " left";
+  }
+
+  function setStatus(msg) {
+    els.status.textContent = msg;
+  }
+
+  function tick() {
+    clearTimeout(timer);
+    render();
+    timer = setTimeout(function () {
+      if (index >= words.length - 1) {
+        finished = true;
+        pause("Finished. Press play to start again.");
+      } else if (els.sentenceMode.checked && isBoundary(index)) {
+        atSentenceEnd = true;
+        pause("End of sentence. Press play for the next one.");
+      } else {
+        index++;
+        tick();
+      }
+    }, delayFor(words[index]));
+  }
+
+  function play() {
+    if (!words.length) {
+      setStatus("Add some text first.");
+      return;
+    }
+    if (finished) {
+      index = 0;
+      finished = false;
+    } else if (atSentenceEnd) {
+      index = Math.min(words.length - 1, index + 1);
+    }
+    atSentenceEnd = false;
+    playing = true;
+    els.play.textContent = "Pause";
+    setStatus("Playing");
+    tick();
+  }
+
+  function pause(msg) {
+    clearTimeout(timer);
+    playing = false;
+    els.play.textContent = "Play";
+    setStatus(msg || "Paused");
+  }
+
+  function toggle() {
+    if (playing) pause();
+    else play();
+  }
+
+  // Move to a new position, carrying on if already playing
+  function goTo(i) {
+    if (!words.length) return;
+    index = Math.max(0, Math.min(words.length - 1, i));
+    finished = false;
+    atSentenceEnd = false;
+    if (playing) tick();
+    else render();
+  }
+
+  function isBoundary(k) {
+    return words[k].sentenceEnd || words[k].paraEnd;
+  }
+
+  function sentenceStart(from) {
+    var s = from;
+    while (s > 0 && !isBoundary(s - 1)) s--;
+    return s;
+  }
+
+  function prevSentence() {
+    if (!words.length) return;
+    var s = sentenceStart(index);
+    // Already at (or just past) the start, so jump to the previous sentence
+    if (index - s <= 1 && s > 0) s = sentenceStart(s - 1);
+    goTo(s);
+  }
+
+  function restart() {
+    goTo(0);
+    if (!playing) setStatus("Back at the start");
+  }
+
+  function loadText() {
+    pause("");
+    words = parse(els.text.value);
+    index = 0;
+    finished = false;
+    atSentenceEnd = false;
+    render();
+  }
+
+  function updateWpm() {
+    els.wpmOut.textContent = els.wpm.value + " WPM";
+    try { localStorage.setItem("rsvp-wpm", els.wpm.value); } catch (e) {}
+    updateProgress();
+  }
+
+  // Events
+  els.play.addEventListener("click", toggle);
+  els.restart.addEventListener("click", restart);
+  els.prevSentence.addEventListener("click", prevSentence);
+  els.prevWord.addEventListener("click", function () { goTo(index - 1); });
+  els.nextWord.addEventListener("click", function () { goTo(index + 1); });
+  els.wpm.addEventListener("input", updateWpm);
+  els.sentenceMode.addEventListener("change", function () {
+    try { localStorage.setItem("rsvp-sentence-mode", els.sentenceMode.checked ? "1" : "0"); } catch (e) {}
+  });
+
+  var debounce = null;
+  els.text.addEventListener("input", function () {
+    clearTimeout(debounce);
+    debounce = setTimeout(loadText, 300);
+  });
+
+  document.addEventListener("keydown", function (e) {
+    var tag = e.target.tagName;
+    if (tag === "TEXTAREA" || tag === "INPUT" || e.altKey || e.ctrlKey || e.metaKey) return;
+
+    if (e.key === " ") {
+      // Let Space activate whatever button or summary has focus
+      if (tag === "BUTTON" || tag === "SUMMARY") return;
+      e.preventDefault();
+      toggle();
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      if (e.shiftKey) prevSentence();
+      else goTo(index - 1);
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      goTo(index + 1);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      restart();
+    }
+  });
+
+  // Start up
+  try {
+    var saved = localStorage.getItem("rsvp-wpm");
+    if (saved && Number(saved) >= 200 && Number(saved) <= 700) els.wpm.value = saved;
+  } catch (e) {}
+  try {
+    els.sentenceMode.checked = localStorage.getItem("rsvp-sentence-mode") === "1";
+  } catch (e) {}
+  els.wpmOut.textContent = els.wpm.value + " WPM";
+  loadText();
+})();
+</script>
+</body>
+</html>
