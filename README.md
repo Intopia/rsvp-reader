@@ -1,14 +1,14 @@
-# RSVP reader
+# Rapid visual reader
 
 A simple tool for reading text one word at a time.
 
-Some people find reading one word at a time easier, others find it harder. It depends on the person and the text. Try it and see if it works for you.
+Some people find reading one word at a time easier, others find it harder. It depends on the person and the text. Try it by pasting your own text into the "Text to read" field below the controls.
 
 Text you paste here is not sent anywhere. The reader runs entirely in your browser.
 
 ## What it is
 
-RSVP stands for Rapid Serial Visual Presentation. Instead of your eyes moving along a line of text, each word appears in the same spot on screen, one after another.
+The reader uses a technique called Rapid Serial Visual Presentation (RSVP). Instead of your eyes moving along a line of text, each word appears in the same spot on screen, one after another.
 
 Each word has one highlighted letter, called the Optimal Recognition Position (ORP). It sits slightly left of the middle of the word, and the whole word shifts so that this letter always lands in exactly the same place, marked by small ticks above and below. The highlighted letter isn't there to be read. It's a fixation point, something for your eyes to rest on, so they don't need to move.
 
@@ -19,7 +19,7 @@ Each word has one highlighted letter, called the Optimal Recognition Position (O
 - **Reading at your own pace.** You can step through word by word with the arrow keys, slowing down, speeding up, or going back whenever you need to.
 - **Proofreading.** When we skim text, our brains quietly fix mistakes before we notice them. Seeing one word at a time breaks that habit, so errors like missing spaces ("messageis") or run-on sentences ("fine.It") stand out immediately. This is similar to how screen reader users often notice errors, as mistakes are announced oddly.
 
-Faster word recognition doesn't always mean better understanding or memory. RSVP tends to work better for straightforward text than for material you need to study closely.
+Faster word recognition doesn't always mean better understanding or memory. This style of reading tends to work better for straightforward text than for material you need to study closely.
 
 ## How to use it
 
